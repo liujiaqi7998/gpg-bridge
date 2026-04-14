@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
 	"sync"
@@ -32,6 +33,7 @@ func BridgeExtra(ctx context.Context, listenAddr string, socketPath string) erro
 		if err != nil {
 			return fmt.Errorf("accept extra connection: %w", err)
 		}
+		log.Printf("received extra request from remote: listen_addr=%q remote_addr=%q", listenAddr, conn.RemoteAddr())
 
 		meta, err := func() (protocol.SocketMeta, error) {
 			metaMu.Lock()

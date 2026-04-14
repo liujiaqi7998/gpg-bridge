@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
 	"net"
 
 	"github.com/liujiaqi7998/gpg-bridge/internal/pageant"
@@ -28,12 +29,12 @@ func BridgeSSH(ctx context.Context, listenAddr string) error {
 		sem <- struct{}{}
 		go func(c net.Conn) {
 			defer func() { <-sem }()
-			_ = handleSSHConn(c)
+			_ = handleSSHConn(listenAddr, c)
 		}(conn)
 	}
 }
 
-func handleSSHConn(conn net.Conn) error {
+func handleSSHConn(listenAddr string, conn net.Conn) error {
 	defer conn.Close()
 
 	for {
@@ -50,6 +51,7 @@ func handleSSHConn(conn net.Conn) error {
 		if _, err := io.ReadFull(conn, payload[4:]); err != nil {
 			return err
 		}
+		log.Printf("received ssh request from remote: listen_addr=%q remote_addr=%q payload_len=%d", listenAddr, conn.RemoteAddr(), msgLen)
 		resp, err := pageant.Query(payload)
 		if err != nil {
 			return err
