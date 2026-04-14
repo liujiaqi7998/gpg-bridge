@@ -3,6 +3,7 @@ package bridge
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,17 +14,24 @@ import (
 )
 
 func BridgeSSH(ctx context.Context, listenAddr string) error {
-	_ = ctx
 	listener, err := winpipe.Listen(listenAddr)
 	if err != nil {
 		return fmt.Errorf("listen ssh bridge on %q: %w", listenAddr, err)
 	}
 	defer listener.Close()
 
+	go func() {
+		<-ctx.Done()
+		_ = listener.Close()
+	}()
+
 	sem := make(chan struct{}, 4)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
+			if ctx.Err() != nil || errors.Is(err, net.ErrClosed) {
+				return nil
+			}
 			return fmt.Errorf("accept ssh connection: %w", err)
 		}
 		sem <- struct{}{}

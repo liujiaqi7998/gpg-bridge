@@ -5,19 +5,25 @@ import (
 	"testing"
 )
 
-func TestParseArgsRequiresAtLeastOneListener(t *testing.T) {
+func TestParseArgsUsesDefaultExtraWhenNoArgs(t *testing.T) {
 	var stderr bytes.Buffer
 
-	_, err := ParseArgs(nil, &stderr)
-	if err == nil {
-		t.Fatal("expected error when no listeners are configured")
+	cfg, err := ParseArgs(nil, &stderr)
+	if err != nil {
+		t.Fatalf("ParseArgs returned error: %v", err)
+	}
+	if cfg.Extra != "127.0.0.1:35132" {
+		t.Fatalf("unexpected default extra address: %q", cfg.Extra)
+	}
+	if cfg.SSH != "" {
+		t.Fatalf("unexpected default ssh address: %q", cfg.SSH)
 	}
 }
 
 func TestParseArgsParsesSupportedFlags(t *testing.T) {
 	var stderr bytes.Buffer
 
-	cfg, err := ParseArgs([]string{"--ssh", `\\.\\pipe\\gpg-bridge-ssh`, "--extra", "127.0.0.1:4321", "--extra-socket", `C:\\Users\\me\\AppData\\Roaming\\gnupg\\S.gpg-agent.extra`, "--detach"}, &stderr)
+	cfg, err := ParseArgs([]string{"--ssh", `\\.\\pipe\\gpg-bridge-ssh`, "--extra", "127.0.0.1:4321", "--extra-socket", `C:\\Users\\me\\AppData\\Roaming\\gnupg\\S.gpg-agent.extra`}, &stderr)
 	if err != nil {
 		t.Fatalf("ParseArgs returned error: %v", err)
 	}
@@ -31,7 +37,13 @@ func TestParseArgsParsesSupportedFlags(t *testing.T) {
 	if cfg.ExtraSocket != `C:\\Users\\me\\AppData\\Roaming\\gnupg\\S.gpg-agent.extra` {
 		t.Fatalf("unexpected extra socket: %q", cfg.ExtraSocket)
 	}
-	if !cfg.Detach {
-		t.Fatal("expected detach to be true")
+}
+
+func TestParseArgsRejectsUnexpectedPositionalArguments(t *testing.T) {
+	var stderr bytes.Buffer
+
+	_, err := ParseArgs([]string{"unexpected"}, &stderr)
+	if err == nil {
+		t.Fatal("expected positional arguments to fail")
 	}
 }

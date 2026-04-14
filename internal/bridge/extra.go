@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -23,6 +24,11 @@ func BridgeExtra(ctx context.Context, listenAddr string, socketPath string) erro
 	}
 	defer listener.Close()
 
+	go func() {
+		<-ctx.Done()
+		_ = listener.Close()
+	}()
+
 	var (
 		metaMu sync.Mutex
 		cached *protocol.SocketMeta
@@ -31,6 +37,9 @@ func BridgeExtra(ctx context.Context, listenAddr string, socketPath string) erro
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
+			if ctx.Err() != nil || errors.Is(err, net.ErrClosed) {
+				return nil
+			}
 			return fmt.Errorf("accept extra connection: %w", err)
 		}
 		log.Printf("received extra request from remote: listen_addr=%q remote_addr=%q", listenAddr, conn.RemoteAddr())
