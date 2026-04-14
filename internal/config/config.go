@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-const DefaultExtraAddr = "127.0.0.1:35132"
+const DefaultExtraAddr = "0.0.0.0:35132"
 
 type Config struct {
 	SSH         string

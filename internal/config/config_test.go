@@ -12,7 +12,7 @@ func TestParseArgsUsesDefaultExtraWhenNoArgs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ParseArgs returned error: %v", err)
 	}
-	if cfg.Extra != "127.0.0.1:35132" {
+	if cfg.Extra != "0.0.0.0:35132" {
 		t.Fatalf("unexpected default extra address: %q", cfg.Extra)
 	}
 	if cfg.SSH != "" {
